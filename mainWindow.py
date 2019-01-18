@@ -24,16 +24,183 @@ class MainWindow(QMainWindow, MainLayout):
         super(MainWindow, self).__init__(parent)
         self.setupUi(self)
         self.signalSlots()
+        # 初始化一个img的ndarray, 用于存储图像
+        self.img = np.ndarray(())
 
     #button与具体方法关联
     def signalSlots(self):
-        self.importButton.clicked.connect(lambda : importImage(self))
-        # self.histNormalizedButton.clicked.connect(lambda : layoutChange(self,1))
-        # self.frequencyProcessButton.clicked.connect(lambda : layoutChange(self,2))
-        self.morphologyProcessButton.clicked.connect(lambda : layoutChange(self,3))
+        #文件按钮相关方法
+        #打开
+        self.openAct.triggered.connect(lambda : importImage(self))
+        #保存
+        self.saveAct.triggered.connect(lambda : importImage(self))
+        #退出
+        self.exitAct.triggered.connect(lambda : importImage(self))
 
+        #编辑按钮相关方法
+        #放大
+        self.largeAct.triggered.connect(lambda : largeImage(self))
+        #缩小
+        self.smallAct.triggered.connect(lambda : smallImage(self))
+        #灰度
+        self.grayAct.triggered.connect(lambda : grayImage(self))
+        #亮度
+        self.brightAct.triggered.connect(lambda : importImage(self))
+        #旋转
+        self.rotateAct.triggered.connect(lambda : rotateImage(self))
+        #截图
+        self.screenshotAct.triggered.connect(lambda : screenshotImage(self))
+
+        #变换按钮相关方法
+        #傅里叶变换
+        self.change1Act.triggered.connect(lambda : importImage(self))
+        #离散余弦变换
+        self.change2Act.triggered.connect(lambda : importImage(self))
+        #Radom变换
+        self.change3Act.triggered.connect(lambda : importImage(self))
+
+        #噪声按钮相关方法
+        #高斯噪声
+        self.noise1Act.triggered.connect(lambda : importImage(self))
+        #椒盐噪声
+        self.noise2Act.triggered.connect(lambda : importImage(self))
+        #斑点噪声
+        self.noise3Act.triggered.connect(lambda : importImage(self))
+        #泊松噪声
+        self.noise4Act.triggered.connect(lambda : importImage(self))
+
+        #滤波按钮相关方法
+        #高通滤波
+        self.smoothing1Act.triggered.connect(lambda : importImage(self))
+        #低通滤波
+        self.smoothing2Act.triggered.connect(lambda : importImage(self))
+        #平滑滤波
+        self.smoothing3Act.triggered.connect(lambda : importImage(self))
+        #锐化滤波
+        self.smoothing4Act.triggered.connect(lambda : importImage(self))
+
+        #直方图统计按钮相关方法
+        #R直方图
+        self.smoothing1Act.triggered.connect(lambda : importImage(self))
+        #G直方图
+        self.smoothing2Act.triggered.connect(lambda : importImage(self))
+        #B直方图
+        self.smoothing3Act.triggered.connect(lambda : importImage(self))
+
+        #图像增强按钮相关方法
+        #伪彩色增强
+        self.enhance1Act.triggered.connect(lambda : importImage(self))
+        #真彩色增强
+        self.enhance2Act.triggered.connect(lambda : importImage(self))
+        #直方图均衡
+        self.enhance3Act.triggered.connect(lambda : histNormalized(self))
+        #NTSC颜色模型
+        self.enhance4Act.triggered.connect(lambda : importImage(self))
+        #YCbCr颜色模型
+        self.enhance5Act.triggered.connect(lambda : importImage(self))
+        #HSV颜色模型
+        self.enhance6Act.triggered.connect(lambda : importImage(self))
+
+        #阈值分割方法
+        self.threButton.clicked.connect(lambda : layoutChange(self,3))
+        #形态学处理方法
+        self.morphologyProcessButton.clicked.connect(lambda : layoutChange(self))
+        #特征提取方法
+        self.featureButton.clicked.connect(lambda : layoutChange(self,3))
+        #图像分类与识别方法
+        self.imgButton.clicked.connect(lambda : layoutChange(self,3))
+
+#编辑按钮相关方法
+#放大
+def largeImage(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        img_info=img[0].shape
+        image_height=img_info[0]
+        image_weight=img_info[1]    
+        dstHeight=int(2*image_height)
+        dstWeight=int(2*image_weight)
+        result=cv2.resize(img[0],(dstHeight,dstWeight))
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','放大后'])
+#缩小
+def smallImage(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        img_info=img[0].shape
+        image_height=img_info[0]
+        image_weight=img_info[1]    
+        dstHeight=int(0.5*image_height)
+        dstWeight=int(0.5*image_weight)
+        result=cv2.resize(img[0],(dstHeight,dstWeight))
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','缩小后'])
+#灰度
+def grayImage(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        b = cv2.CreateImage(cv2.GetSize(img[0]), img[0].depth, 1)
+        g = cv2.CloneImage(b)
+        r = cv2.CloneImage(b)
+    
+        
+        result = cv2.Split(img[0], b, g, r, None)
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','灰度处理后'])
+#旋转
+def rotateImage(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        img_info=img[0].shape
+        image_height=img_info[0]
+        image_weight=img_info[1]
+        mat_rotate=cv2.getRotationMatrix2D((image_height*0.5,image_weight*0.5),90,1)    #center angle 3scale
+        result=cv2.warpAffine(img[0],mat_rotate,(image_height,image_weight))
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','旋转后'])
+#截图
+def screenshotImage(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        result = img[0][70:170, 440:540]
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','截图后'])
+
+#图像增强按钮相关方法
+#直方图均衡
+def histNormalized(window):
+    imageList=[]
+
+    for img in window.originImages:
+        imgs=[]
+        b, g, r = cv2.split(img[0])
+        b_equal = cv2.equalizeHist(b)
+        g_equal = cv2.equalizeHist(g)
+        r_equal = cv2.equalizeHist(r)
+        bgrEquImage = cv2.merge([b_equal, g_equal, r_equal])
+        imgs.extend([img[0],bgrEquImage])
+        imageList.append(imgs)
+
+    resizeFromList(window, imageList)
+    showImage(window,['原图','均衡化后'])
+
+#打开图像
 def importImage(window):
-    # 调用打开文件diglog
     fname, _ = QFileDialog.getOpenFileName(window, 'Open file', '.', 'Image Files(*.jpg *.bmp *.png *.jpeg *.rgb *.tif)')
     if fname!='':
         window.importImageEdit.setText(fname)
@@ -56,7 +223,7 @@ def readIamge(window):
         imgs.append(img)
         window.originImages.append(imgs)
 
-
+#显示图像
 def showImage(window,headers=[]):
     window.showImageView.clear()
     window.showImageView.setColumnCount(len(window.imageList[0]))
@@ -88,8 +255,8 @@ def showImage(window,headers=[]):
             window.showImageView.setCellWidget(y, x, imageView)
 
 def resizeFromList(window,imageList):
-    width=800
-    height=800
+    width=600
+    height=500
     window.imageList=[]
     for x_pos in range(len(imageList)):
         imgs=[]
@@ -99,217 +266,6 @@ def resizeFromList(window,imageList):
             imgs.append(image)
         window.imageList.append(imgs)
         print(len(window.imageList),len(window.imageList[0]))
-
-def layoutChange(window,layoutTag):
-    print(window.hideLayoutTag)
-    if window.hideLayoutTag!=-1:
-        deleteWidgets(window, window.hideLayoutTag)
-
-    if layoutTag==1:
-        window.rgbButton=QPushButton('RGB')
-        window.hsiButton=QPushButton('HSV')
-        window.hideLayout.addWidget(window.rgbButton)
-        window.hideLayout.addWidget(window.hsiButton)
-
-        #信号槽
-        window.rgbButton.clicked.connect(lambda : histNormalized(window,'RGB'))
-        window.hsiButton.clicked.connect(lambda : histNormalized(window,'HSV'))
-    elif layoutTag==2:
-        window.dftButton=QPushButton('快速傅里叶变换')
-        window.gaussFilterButton=QPushButton('高斯低通滤波')
-        window.hideLayout.addWidget(window.dftButton)
-        window.hideLayout.addWidget(window.gaussFilterButton)
-
-        #信号槽
-        window.dftButton.clicked.connect(lambda : frequencyProcess(window,'DFT'))
-        window.gaussFilterButton.clicked.connect(lambda : frequencyProcess(window,'Gauss Filter'))
-
-    elif layoutTag==3:
-        window.kernelLabel=QLabel('选择核大小:')
-        window.kernelSelect=QComboBox()
-        window.kernelSelect.addItems([str(i) for i in range(5,21)])
-        window.excuteButton=QPushButton('执行')
-        window.hideLayout.addWidget(window.kernelLabel)
-        window.hideLayout.addWidget(window.kernelSelect)
-        window.hideLayout.addWidget(window.excuteButton)
-
-        #信号槽
-        window.excuteButton.clicked.connect(lambda : morphologyProcess(window))
-
-    window.cancelButton=QPushButton('取消')
-    window.hideLayout.addWidget(window.cancelButton)
-    window.cancelButton.clicked.connect(lambda: deleteWidgets(window, layoutTag))
-
-    window.hideLayoutTag = layoutTag
-
-def deleteWidgets(window,layoutMode):
-    if layoutMode==1:
-        window.rgbButton.deleteLater()
-        window.hsiButton.deleteLater()
-
-    elif layoutMode==2:
-        window.dftButton.deleteLater()
-        window.gaussFilterButton.deleteLater()
-
-    elif layoutMode==3:
-        window.kernelLabel.deleteLater()
-        window.kernelSelect.deleteLater()
-        window.excuteButton.deleteLater()
-
-    window.cancelButton.deleteLater()
-    window.hideLayoutTag=-1
-
-def histNormalized(window,modelTag):
-    imageList=[]
-    if modelTag=='RGB':
-
-        for img in window.originImages:
-            imgs=[]
-            b, g, r = cv2.split(img[0])
-            b_equal = cv2.equalizeHist(b)
-            g_equal = cv2.equalizeHist(g)
-            r_equal = cv2.equalizeHist(r)
-            bgrEquImage = cv2.merge([b_equal, g_equal, r_equal])
-            imgs.extend([img[0],bgrEquImage])
-            imageList.append(imgs)
-
-        resizeFromList(window, imageList)
-        showImage(window,['原图','均衡化后'])
-    elif modelTag=='HSV':
-        for img in window.originImages:
-            imgs=[]
-            hsvImage = cv2.cvtColor(img[0], cv2.COLOR_BGR2HSV)
-            h, s, v = cv2.split(hsvImage)
-            h_equal = cv2.equalizeHist(h)
-            hEquImage = cv2.cvtColor(cv2.merge([h_equal, s, v]),cv2.COLOR_HSV2BGR)
-            s_equal = cv2.equalizeHist(s)
-            sEquImage=cv2.cvtColor(cv2.merge([h, s_equal, v]),cv2.COLOR_HSV2BGR)
-            v_equal = cv2.equalizeHist(v)
-            vEquImage = cv2.cvtColor(cv2.merge([h, s, v_equal]), cv2.COLOR_HSV2BGR)
-            hsvEquImage = cv2.cvtColor(cv2.merge([h_equal, s_equal, v_equal]), cv2.COLOR_HSV2BGR)
-            imgs.extend([img[0],hEquImage,sEquImage,vEquImage,hsvEquImage])
-            imageList.append(imgs)
-
-        resizeFromList(window, imageList)
-        showImage(window,['RGB原图','H均衡化','S均衡化','V均衡化','HSV均衡化'])
-
-def frequencyProcess(window,modelTag):
-    imageList=[]
-    if modelTag=='DFT':
-        for images in window.originImages:
-            for img in images:
-                imgs=[]
-                b,g,r=cv2.split(img)
-                b_freImg,b_recImg=oneChannelDft(b)
-                g_freImg, g_recImg = oneChannelDft(g)
-                r_freImg, r_recImg = oneChannelDft(r)
-                freImg=cv2.merge([b_freImg,g_freImg,r_freImg])
-                recImg=cv2.merge([b_recImg,g_recImg,r_recImg])
-                imgs.extend([img,freImg,recImg])
-                imageList.append(imgs)
-        resizeFromList(window, imageList)
-        showImage(window,['原图','傅里叶变换频谱','还原图'])
-    elif modelTag=='Gauss Filter':
-        for images in window.originImages:
-            for img in images:
-                imgs=[]
-                imgs.append(img)
-                b, g, r = cv2.split(img)
-                width, height = b.shape
-                nwidth = cv2.getOptimalDFTSize(width)
-                nheigth = cv2.getOptimalDFTSize(height)
-                for radius in [5,15,30,80,230]:
-                    b_ilmg = oneChannelGaussLowFilter(b,nwidth,nheigth,radius)
-                    g_ilmg = oneChannelGaussLowFilter(g,nwidth,nheigth,radius)
-                    r_ilmg = oneChannelGaussLowFilter(r,nwidth,nheigth,radius)
-                    ilmg=cv2.merge([b_ilmg,g_ilmg,r_ilmg])
-                    imgs.append(ilmg)
-                imageList.append(imgs)
-        resizeFromList(window, imageList)
-        showImage(window,['原图','半径=5','半径=15','半径=30','半径=80','半径=230'])
-
-def oneChannelDft(img):
-    width, height = img.shape
-
-    nwidth = cv2.getOptimalDFTSize(width)
-    nheigth = cv2.getOptimalDFTSize(height)
-
-    nimg = np.zeros((nwidth, nheigth))
-    nimg[:width, :height] = img
-
-    dft = cv2.dft(np.float32(nimg), flags=cv2.DFT_COMPLEX_OUTPUT)
-
-    ndft = dft[:width, :height]
-    ndshift = np.fft.fftshift(ndft)
-    magnitude = np.log(cv2.magnitude(ndshift[:, :, 0], ndshift[:, :, 1]))
-    result = (magnitude - magnitude.min()) / (magnitude.max() - magnitude.min()) * 255
-    frequencyImg = result.astype('uint8')
-
-    # dshift=np.fft.fftshift(dft)
-    # idftShift=np.fft.ifftshift(dshift)
-    ilmg = cv2.idft(dft)
-    ilmg = cv2.magnitude(ilmg[:, :, 0], ilmg[:, :, 1])[:width, :height]
-    ilmg = np.floor((ilmg - ilmg.min()) / (ilmg.max() - ilmg.min()) * 255)
-    recoveredImg = ilmg.astype('uint8')
-
-    return frequencyImg,recoveredImg
-
-def oneChannelGaussLowFilter(img,nwidth,nheigth,radius):
-    width, height = img.shape
-
-    nimg = np.zeros((nwidth, nheigth))
-    nimg[:width, :height] = img
-
-    dft = cv2.dft(np.float32(nimg), flags=cv2.DFT_COMPLEX_OUTPUT)
-
-
-    dshift = np.fft.fftshift(dft)
-    temp = cv2.magnitude(dshift[:, :, 0], dshift[:, :, 1])
-    center = np.unravel_index(np.argmax(temp), temp.shape)
-    gaussLow = creategaussLowFilter(nwidth, nheigth, center[0], center[1], radius)
-    dshift[:, :, 0] = dshift[:, :, 0] * gaussLow
-    dshift[:, :, 1] = dshift[:, :, 1] * gaussLow
-
-    idftShift = np.fft.ifftshift(dshift)
-
-    ilmg = cv2.idft(idftShift)
-    ilmg = cv2.magnitude(ilmg[:, :, 0], ilmg[:, :, 1])[:width, :height]
-    ilmg = (ilmg - ilmg.min()) / (ilmg.max() - ilmg.min()) * 255
-    ilmg = ilmg.astype('uint8')
-
-    return ilmg
-
-
-def creategaussLowFilter(width, height, center_x, center_y, radius):
-    gaussLowFilter = np.zeros((width, height), dtype='float32')
-    Radius=2*np.power(radius,2.0)
-    for x in range(width):
-        for y in range(height):
-            gaussLowFilter[x][y] = np.exp(
-                -(np.power(x - center_x, 2.0) + np.power(y - center_y, 2.0)) / Radius)
-
-    return gaussLowFilter
-
-def morphologyProcess(window):
-        imageList =[]
-        for images in window.originImages:
-            for img in images:
-                imgs=[]
-                # b,g,r=cv2.split()
-                b,g,r=tuple(cv2.threshold(image,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1] for image in cv2.split(img))
-                ksize=int(window.kernelSelect.currentText())
-                k=np.ones((ksize,ksize),np.uint8)
-                binaryImg=cv2.merge([b,g,r])
-                erodeImg=cv2.merge([cv2.erode(image,k) for image in [b,g,r]])
-                dilateImage=cv2.merge([cv2.dilate(image,k) for image in [b,g,r]])
-                openImage=cv2.merge([cv2.morphologyEx(image,cv2.MORPH_OPEN,k) for image in [b,g,r]])
-                closeImage=cv2.merge([cv2.morphologyEx(image,cv2.MORPH_CLOSE,k) for image in [b,g,r]])
-                imgs.extend([img,binaryImg,erodeImg,dilateImage,openImage,closeImage])
-                imageList.append(imgs)
-
-        resizeFromList(window, imageList)
-        showImage(window,['原图','二值化','腐蚀','膨胀','开运算','闭运算'])
-
 
 if __name__=='__main__':
 
