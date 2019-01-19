@@ -45,7 +45,7 @@ class MainWindow(QMainWindow, MainLayout):
         #灰度
         self.grayAct.triggered.connect(lambda : grayImage(self))
         #亮度
-        self.brightAct.triggered.connect(lambda : importImage(self))
+        self.brightAct.triggered.connect(lambda : brightImage(self))
         #旋转
         self.rotateAct.triggered.connect(lambda : rotateImage(self))
         #截图
@@ -53,17 +53,17 @@ class MainWindow(QMainWindow, MainLayout):
 
         #变换按钮相关方法
         #傅里叶变换
-        self.change1Act.triggered.connect(lambda : importImage(self))
+        self.change1Act.triggered.connect(lambda : change1Image(self))
         #离散余弦变换
-        self.change2Act.triggered.connect(lambda : importImage(self))
-        #Radom变换
-        self.change3Act.triggered.connect(lambda : importImage(self))
+        self.change2Act.triggered.connect(lambda : change2Image(self))
+        #Radon变换
+        self.change3Act.triggered.connect(lambda : change3Image(self))
 
         #噪声按钮相关方法
         #高斯噪声
-        self.noise1Act.triggered.connect(lambda : importImage(self))
+        self.noise1Act.triggered.connect(lambda : noise1Image(self))
         #椒盐噪声
-        self.noise2Act.triggered.connect(lambda : importImage(self))
+        self.noise2Act.triggered.connect(lambda : noise2Image(self))
         #斑点噪声
         self.noise3Act.triggered.connect(lambda : importImage(self))
         #泊松噪声
@@ -71,44 +71,44 @@ class MainWindow(QMainWindow, MainLayout):
 
         #滤波按钮相关方法
         #高通滤波
-        self.smoothing1Act.triggered.connect(lambda : importImage(self))
+        self.smoothing1Act.triggered.connect(lambda : smoothing1Image(self))
         #低通滤波
-        self.smoothing2Act.triggered.connect(lambda : importImage(self))
+        self.smoothing2Act.triggered.connect(lambda : smoothing2Image(self))
         #平滑滤波
-        self.smoothing3Act.triggered.connect(lambda : importImage(self))
+        self.smoothing3Act.triggered.connect(lambda : smoothing3Image(self))
         #锐化滤波
-        self.smoothing4Act.triggered.connect(lambda : importImage(self))
+        self.smoothing4Act.triggered.connect(lambda : smoothing4Image(self))
 
         #直方图统计按钮相关方法
         #R直方图
-        self.smoothing1Act.triggered.connect(lambda : importImage(self))
+        self.hist1Act.triggered.connect(lambda : importImage(self))
         #G直方图
-        self.smoothing2Act.triggered.connect(lambda : importImage(self))
+        self.hist2Act.triggered.connect(lambda : importImage(self))
         #B直方图
-        self.smoothing3Act.triggered.connect(lambda : importImage(self))
+        self.hist3Act.triggered.connect(lambda : importImage(self))
 
         #图像增强按钮相关方法
         #伪彩色增强
-        self.enhance1Act.triggered.connect(lambda : importImage(self))
+        self.enhance1Act.triggered.connect(lambda : enhance1Image(self))
         #真彩色增强
-        self.enhance2Act.triggered.connect(lambda : importImage(self))
+        self.enhance2Act.triggered.connect(lambda : enhance2Image(self))
         #直方图均衡
         self.enhance3Act.triggered.connect(lambda : histNormalized(self))
         #NTSC颜色模型
-        self.enhance4Act.triggered.connect(lambda : importImage(self))
+        self.enhance4Act.triggered.connect(lambda : enhance4Image(self))
         #YCbCr颜色模型
-        self.enhance5Act.triggered.connect(lambda : importImage(self))
+        self.enhance5Act.triggered.connect(lambda : enhance5Image(self))
         #HSV颜色模型
-        self.enhance6Act.triggered.connect(lambda : importImage(self))
+        self.enhance6Act.triggered.connect(lambda : enhance6Image(self))
 
         #阈值分割方法
-        self.threButton.clicked.connect(lambda : layoutChange(self,3))
+        self.threButton.clicked.connect(lambda : threImage(self))
         #形态学处理方法
-        self.morphologyProcessButton.clicked.connect(lambda : layoutChange(self))
+        self.morphologyProcessButton.clicked.connect(lambda : morphologyProcessImage(self))
         #特征提取方法
-        self.featureButton.clicked.connect(lambda : layoutChange(self,3))
+        self.featureButton.clicked.connect(lambda : featureImage(self))
         #图像分类与识别方法
-        self.imgButton.clicked.connect(lambda : layoutChange(self,3))
+        self.imgButton.clicked.connect(lambda : layoutChange(self))
 
 #编辑按钮相关方法
 #放大
@@ -145,17 +145,24 @@ def smallImage(window):
 def grayImage(window):
     imageList=[]
     for img in window.originImages:
-        imgs=[]
-        b = cv2.CreateImage(cv2.GetSize(img[0]), img[0].depth, 1)
-        g = cv2.CloneImage(b)
-        r = cv2.CloneImage(b)
-    
-        
-        result = cv2.Split(img[0], b, g, r, None)
+        imgs=[]       
+        result = cv2.cvtColor(img[0], cv2.COLOR_BGR2RGB)
         imgs.extend([img[0],result])
         imageList.append(imgs)
     resizeFromList(window, imageList)
     showImage(window,['原图','灰度处理后'])
+#亮度
+def brightImage(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]   
+        rows, cols, chunnel = img[0].shape
+        blank = np.zeros([rows, cols, chunnel], img[0].dtype)   
+        result = cv2.addWeighted(img[0], 1.3, blank, 1-1.3, 3)
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','调整亮度后'])
 #旋转
 def rotateImage(window):
     imageList=[]
@@ -181,7 +188,182 @@ def screenshotImage(window):
     resizeFromList(window, imageList)
     showImage(window,['原图','截图后'])
 
+#变换按钮相关方法
+#傅里叶变换
+def change1Image(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        dft = cv2.dft(np.float32(img[0]),flags = cv2.DFT_COMPLEX_OUTPUT)
+        dft_shift = np.fft.fftshift(dft)
+        result = 20*np.log(cv2.magnitude(dft_shift[:,:,0],dft_shift[:,:,1]))
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','傅里叶变换后'])
+#离散余弦变换
+def change2Image(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        img_dct = cv2.dct(img[0])         #进行离散余弦变换
+        result = np.log(abs(img_dct)) 
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','离散余弦变换后'])
+#Radon变换
+def change3Image(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        img_dct = cv2.dct(img[0])         
+        result = np.log(abs(img_dct)) 
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','Radon变换后'])
+
+#噪声按钮相关方法
+#高斯噪声
+#定义添加高斯噪声的函数 
+def addGaussianNoise(image,percetage): 
+    G_Noiseimg = image 
+    G_NoiseNum=int(percetage*image.shape[0]*image.shape[1]) 
+    for i in range(G_NoiseNum): 
+        temp_x = np.random.randint(20,40) 
+        temp_y = np.random.randint(20,40) 
+        G_Noiseimg[temp_x][temp_y] = 255 
+    return G_Noiseimg
+def noise1Image(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        grayImage = cv2.cvtColor(img[0], cv2.COLOR_BGR2RGB) #灰度变换
+        result = addGaussianNoise(grayImage,0.01) #添加10%的高斯噪声 
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','高斯噪声后'])
+#椒盐噪声
+#定义添加椒盐噪声的函数 
+def saltpepper(img,n):
+    m=int((img.shape[0]*img.shape[1])*n)
+    for a in range(m):
+        i=int(np.random.random()*img.shape[1])
+        j=int(np.random.random()*img.shape[0])
+        if img.ndim==2:
+            img[j,i]=255
+        elif img.ndim==3:
+            img[j,i,0]=255
+            img[j,i,1]=255
+            img[j,i,2]=255
+    for b in range(m):
+        i=int(np.random.random()*img.shape[1])
+        j=int(np.random.random()*img.shape[0])
+        if img.ndim==2:
+            img[j,i]=0
+        elif img.ndim==3:
+            img[j,i,0]=0
+            img[j,i,1]=0
+            img[j,i,2]=0
+    return img
+def noise2Image(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        grayImage = cv2.cvtColor(img[0], cv2.COLOR_BGR2RGB) #灰度变换
+        result = saltpepper(grayImage,0.02)
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','椒盐噪声后'])
+
+#滤波按钮相关方法
+#高通滤波
+def smoothing1Image(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        x=cv2.Sobel(img[0],cv2.CV_16S,1,0)
+        y=cv2.Sobel(img[0],cv2.CV_16S,0,1)
+        absx=cv2.convertScaleAbs(x)
+        absy=cv2.convertScaleAbs(y)
+        result = cv2.addWeighted(absx,0.5,absy,0.5,0)
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','高通滤波后'])
+#低通滤波
+def smoothing2Image(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        result = cv2.medianBlur(img[0],5)
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','低通滤波后'])
+#平滑滤波
+def smoothing3Image(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        result = cv2.blur(img[0], (5, 5))
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','平滑滤波后'])
+#锐化滤波
+def smoothing4Image(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        result = cv2.bilateralFilter(img[0],9,75,75)
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','锐化滤波后'])
+
+#直方图统计按钮相关方法
+#R直方图
+def hist1Image(window):
+    imageList=[]
+    for img in window.originImages:
+        imgs=[]
+        result = cv2.bilateralFilter(img[0],9,75,75)
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+    resizeFromList(window, imageList)
+    showImage(window,['原图','R直方图后'])
+
 #图像增强按钮相关方法
+#伪彩色增强
+def enhance1Image(window):
+    imageList=[]
+
+    for img in window.originImages:
+        imgs=[]
+        grayImage = cv2.cvtColor(img[0], cv2.COLOR_BGR2RGB) #灰度变换
+        result = cv2.applyColorMap(grayImage, cv2.COLORMAP_JET)
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+
+    resizeFromList(window, imageList)
+    showImage(window,['原图','伪彩色增强后'])
+#真彩色增强
+def enhance2Image(window):
+    imageList=[]
+
+    for img in window.originImages:
+        imgs=[]
+        grayImage = cv2.cvtColor(img[0], cv2.COLOR_BGR2RGB) #灰度变换
+        result = cv2.applyColorMap(grayImage, cv2.COLORMAP_JET)
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+
+    resizeFromList(window, imageList)
+    showImage(window,['原图','真彩色增强后'])
 #直方图均衡
 def histNormalized(window):
     imageList=[]
@@ -192,12 +374,95 @@ def histNormalized(window):
         b_equal = cv2.equalizeHist(b)
         g_equal = cv2.equalizeHist(g)
         r_equal = cv2.equalizeHist(r)
-        bgrEquImage = cv2.merge([b_equal, g_equal, r_equal])
-        imgs.extend([img[0],bgrEquImage])
+        result = cv2.merge([b_equal, g_equal, r_equal])
+        imgs.extend([img[0],result])
         imageList.append(imgs)
 
     resizeFromList(window, imageList)
-    showImage(window,['原图','均衡化后'])
+    showImage(window,['原图','直方图均衡化后'])
+
+#NTSC颜色模型
+def enhance4Image(window):
+    imageList=[]
+
+    for img in window.originImages:
+        imgs=[]
+        result = cv2.cvtColor(img[0], cv2.COLOR_BGR2RGB)
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+
+    resizeFromList(window, imageList)
+    showImage(window,['原图','NTSC颜色模型后'])
+
+#YCbCr颜色模型
+def enhance5Image(window):
+    imageList=[]
+
+    for img in window.originImages:
+        imgs=[]
+        result = cv2.cvtColor(img[0], cv2.COLOR_BGR2YCR_CB)
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+
+    resizeFromList(window, imageList)
+    showImage(window,['原图','YCbCr颜色模型后'])
+
+#HSV颜色模型
+def enhance6Image(window):
+    imageList=[]
+
+    for img in window.originImages:
+        imgs=[]
+        result = cv2.cvtColor(img[0],cv2.COLOR_BGR2HSV)
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+
+    resizeFromList(window, imageList)
+    showImage(window,['原图','HSV颜色模型后'])
+
+#阈值分割方法
+def threImage(window):
+    imageList=[]
+
+    for img in window.originImages:
+        imgs=[]
+        grayImage = cv2.cvtColor(img[0], cv2.COLOR_BGR2RGB) #灰度变换
+        result = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY)
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+
+    # resizeFromList(window, imageList)
+    showImage(window,['原图','阈值分割后'])
+
+#形态学处理方法
+def morphologyProcessImage(window):
+    imageList=[]
+
+    for img in window.originImages:
+        imgs=[]
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3, 3))
+        result = cv2.erode(img[0],kernel)
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+
+    # resizeFromList(window, imageList)
+    showImage(window,['原图','形态学处理后'])
+
+#特征提取方法
+def featureImage(window):
+    imageList=[]
+
+    for img in window.originImages:
+        imgs=[]
+        gray= cv2.cvtColor(img[0],cv2.COLOR_BGR2GRAY) 
+        sift = cv2.xfeatures2d.SIFT_create()
+        kp = sift.detect(gray,None)
+        result = cv2.drawKeypoints(gray,kp,img[0])
+        imgs.extend([img[0],result])
+        imageList.append(imgs)
+
+    resizeFromList(window, imageList)
+    showImage(window,['原图','特征提取后'])
 
 #打开图像
 def importImage(window):
@@ -248,7 +513,7 @@ def showImage(window,headers=[]):
 
             frame = QImage(img, width, height, QImage.Format_RGB888)
             pix = QPixmap.fromImage(frame)
-            item = QGraphicsPixmapItem(pix)  # 创建像素图元
+            item = QGraphicsPixmapItem(pix) 
             scene = QGraphicsScene()  # 创建场景
             scene.addItem(item)
             imageView.setScene(scene)
@@ -262,6 +527,7 @@ def resizeFromList(window,imageList):
         imgs=[]
         for img in imageList[x_pos]:
 
+            # image=cv2.resize(img, (width, height))
             image=cv2.resize(img, (width, height), interpolation=cv2.INTER_CUBIC)
             imgs.append(image)
         window.imageList.append(imgs)
