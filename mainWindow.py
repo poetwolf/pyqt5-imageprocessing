@@ -13,6 +13,7 @@ from mainWindowLayout import MainLayout
 import cv2
 import numpy as np
 from scipy import ndimage
+from matplotlib import pyplot as plt
 
 class MainWindow(QMainWindow, MainLayout):
     imagePaths = []
@@ -24,8 +25,7 @@ class MainWindow(QMainWindow, MainLayout):
         super(MainWindow, self).__init__(parent)
         self.setupUi(self)
         self.signalSlots()
-        # 初始化一个img的ndarray, 用于存储图像
-        self.img = np.ndarray(())
+        
 
     #button与具体方法关联
     def signalSlots(self):
@@ -35,7 +35,7 @@ class MainWindow(QMainWindow, MainLayout):
         #保存
         self.saveAct.triggered.connect(lambda : importImage(self))
         #退出
-        self.exitAct.triggered.connect(lambda : importImage(self))
+        self.exitAct.triggered.connect(self.close)
 
         #编辑按钮相关方法
         #放大
@@ -81,7 +81,7 @@ class MainWindow(QMainWindow, MainLayout):
 
         #直方图统计按钮相关方法
         #R直方图
-        self.hist1Act.triggered.connect(lambda : importImage(self))
+        self.hist1Act.triggered.connect(lambda : hist1Image(self))
         #G直方图
         self.hist2Act.triggered.connect(lambda : importImage(self))
         #B直方图
@@ -109,6 +109,13 @@ class MainWindow(QMainWindow, MainLayout):
         self.featureButton.clicked.connect(lambda : featureImage(self))
         #图像分类与识别方法
         self.imgButton.clicked.connect(lambda : layoutChange(self))
+        #底部
+        #上一张
+        self.preButton.clicked.connect(lambda : preImage(self))
+        #下一张
+        self.nextButton.clicked.connect(lambda : nextImage(self))
+        #退出
+        self.exitButton.clicked.connect(self.close)
 
 #编辑按钮相关方法
 #放大
@@ -194,21 +201,41 @@ def change1Image(window):
     imageList=[]
     for img in window.originImages:
         imgs=[]
-        dft = cv2.dft(np.float32(img[0]),flags = cv2.DFT_COMPLEX_OUTPUT)
-        dft_shift = np.fft.fftshift(dft)
-        result = 20*np.log(cv2.magnitude(dft_shift[:,:,0],dft_shift[:,:,1]))
-        imgs.extend([img[0],result])
+        b,g,r=cv2.split(img[0])
+        b_freImg,b_recImg=oneChannelDft(b)
+        g_freImg, g_recImg = oneChannelDft(g)
+        r_freImg, r_recImg = oneChannelDft(r)
+        freImg=cv2.merge([b_freImg,g_freImg,r_freImg])
+        imgs.extend([img[0],freImg])
         imageList.append(imgs)
     resizeFromList(window, imageList)
     showImage(window,['原图','傅里叶变换后'])
+def oneChannelDft(img):
+    width, height = img.shape
+    nwidth = cv2.getOptimalDFTSize(width)
+    nheigth = cv2.getOptimalDFTSize(height)
+    nimg = np.zeros((nwidth, nheigth))
+    nimg[:width, :height] = img
+    dft = cv2.dft(np.float32(nimg), flags=cv2.DFT_COMPLEX_OUTPUT)
+    ndft = dft[:width, :height]
+    ndshift = np.fft.fftshift(ndft)
+    magnitude = np.log(cv2.magnitude(ndshift[:, :, 0], ndshift[:, :, 1]))
+    result = (magnitude - magnitude.min()) / (magnitude.max() - magnitude.min()) * 255
+    frequencyImg = result.astype('uint8')
+    ilmg = cv2.idft(dft)
+    ilmg = cv2.magnitude(ilmg[:, :, 0], ilmg[:, :, 1])[:width, :height]
+    ilmg = np.floor((ilmg - ilmg.min()) / (ilmg.max() - ilmg.min()) * 255)
+    recoveredImg = ilmg.astype('uint8')
+    return frequencyImg,recoveredImg
+
 #离散余弦变换
 def change2Image(window):
     imageList=[]
     for img in window.originImages:
         imgs=[]
-        img_dct = cv2.dct(img[0])         #进行离散余弦变换
-        result = np.log(abs(img_dct)) 
-        imgs.extend([img[0],result])
+        img1 = cv2.cvtColor(img[0], cv2.COLOR_BGR2RGB)
+        img_dct = cv2.dct(img1)         #进行离散余弦变换
+        imgs.extend([img[0],img_dct])
         imageList.append(imgs)
     resizeFromList(window, imageList)
     showImage(window,['原图','离散余弦变换后'])
@@ -331,7 +358,14 @@ def hist1Image(window):
     imageList=[]
     for img in window.originImages:
         imgs=[]
-        result = cv2.bilateralFilter(img[0],9,75,75)
+        color = ('b','g','r')
+        for i,col in enumerate(color):
+            histr = cv2.calcHist([img[0]],[i],None,[256],[0,256])
+            plt.plot(histr,color = col)
+            plt.xlim([0,256])
+        plt.savefig("hist1.jpg")
+        
+        result = cv2.imread("hist1.jpg")
         imgs.extend([img[0],result])
         imageList.append(imgs)
     resizeFromList(window, imageList)
@@ -445,7 +479,7 @@ def morphologyProcessImage(window):
         imgs.extend([img[0],result])
         imageList.append(imgs)
 
-    # resizeFromList(window, imageList)
+    resizeFromList(window, imageList)
     showImage(window,['原图','形态学处理后'])
 
 #特征提取方法
@@ -454,15 +488,17 @@ def featureImage(window):
 
     for img in window.originImages:
         imgs=[]
-        gray= cv2.cvtColor(img[0],cv2.COLOR_BGR2GRAY) 
-        sift = cv2.xfeatures2d.SIFT_create()
-        kp = sift.detect(gray,None)
-        result = cv2.drawKeypoints(gray,kp,img[0])
-        imgs.extend([img[0],result])
+        img1 = img[0].copy()
+        gray=cv2.cvtColor(img[0],cv2.COLOR_BGR2GRAY)
+        gray=np.float32(gray)
+        dst=cv2.cornerHarris(gray,2,3,0.04)
+        img[0][dst>0.01*dst.max()]=[0,0,255]
+        imgs.extend([img1,img[0]])
         imageList.append(imgs)
 
     resizeFromList(window, imageList)
     showImage(window,['原图','特征提取后'])
+
 
 #打开图像
 def importImage(window):
@@ -512,6 +548,7 @@ def showImage(window,headers=[]):
             window.showImageView.setRowHeight(y, height)
 
             frame = QImage(img, width, height, QImage.Format_RGB888)
+            #调用QPixmap命令，建立一个图像存放框
             pix = QPixmap.fromImage(frame)
             item = QGraphicsPixmapItem(pix) 
             scene = QGraphicsScene()  # 创建场景
@@ -521,7 +558,7 @@ def showImage(window,headers=[]):
 
 def resizeFromList(window,imageList):
     width=600
-    height=500
+    height=600
     window.imageList=[]
     for x_pos in range(len(imageList)):
         imgs=[]

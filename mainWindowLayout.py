@@ -19,6 +19,8 @@ class MainLayout(object):
 
         #全局布局
         mainLayout=QVBoxLayout(self.centralWidget)
+        self.label = QLabel()
+        self.show()
 
         #顶部布局
         #顶部固定布局
@@ -63,7 +65,7 @@ class MainLayout(object):
         changemenu.addAction(self.change1Act)
         self.change2Act = QAction('离散余弦变换',self)
         changemenu.addAction(self.change2Act)
-        self.change3Act = QAction('Radom变换',self)
+        self.change3Act = QAction('Radon变换',self)
         changemenu.addAction(self.change3Act)
         self.changeButton.setMenu(changemenu)
         #噪声按钮
@@ -148,6 +150,13 @@ class MainLayout(object):
 
         #底部布局
         bottomLayout=QHBoxLayout()
+        self.preButton=QPushButton('上一张')
+        bottomLayout.addWidget(self.preButton)
+        self.nextButton=QPushButton('下一张')
+        bottomLayout.addWidget(self.nextButton)
+        bottomLayout.addStretch(4)
+        self.exitButton=QPushButton('退出')
+        bottomLayout.addWidget(self.exitButton)
         mainLayout.addLayout(bottomLayout)
 
         #设置stretch
